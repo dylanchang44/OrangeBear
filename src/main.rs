@@ -1,8 +1,6 @@
 use std::default;
-
-use iced::window::Mode;
-use iced::{event, Alignment, Background, Border, Element, Length, Padding, Sandbox, Settings, Shadow, Vector};
-use iced::widget::{button, container, slider, pick_list, text, text_input, Button, Column, Container, Row, Text, TextInput};
+use iced::{event, Renderer, Alignment, Background, Border, Element, Length, Padding, Sandbox, Settings, Shadow, Vector};
+use iced::widget::{button, column, container, pick_list, slider, text, text_input, Button, Column, Container, PickList, Row, Text, TextInput};
 
 use iced::theme::{self, Theme};
 use iced::alignment::{Horizontal , Vertical};
@@ -25,13 +23,13 @@ struct FieldStr{
     dip_price: String,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 struct Field{
     position: u8,
     start_price: u8,
     dip_price: u8,
     resolution: u8,
-    model: Option<Model>,
+    model:Model,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -63,7 +61,7 @@ impl std::fmt::Display for Model {
 enum Message {
     FieldStrChange(String, String, String), 
     SliderChange(u8),
-    ModelSelect(Option<Model>),
+    ModelSelect(Model),
     Submit, // trigger to calculate bid distribution
     Clear, // reset to default
     ToggleTheme, // change between light/dark
@@ -79,7 +77,7 @@ impl Sandbox for Bear{
                 start_price: 0,
                 dip_price: 0,
                 resolution: 4,
-                model: Some(Model::FlatHat),
+                model: Model::FlatHat,
             },
             fields_str: FieldStr{
                 position: String::new(),
@@ -122,10 +120,19 @@ impl Sandbox for Bear{
     }
 
     fn view(&self) -> Element<Message> {
-        let content= insert_block(&self.fields_str,self.fields.resolution);
+        let text_insert= insert_block(&self.fields_str);
+        let slider=reso_slider(self.fields.resolution);
+        let pick_list:PickList<'static, Model, [Model; 2], Model, Message, Theme, Renderer>=pick_list(Model::ALL, Some(self.fields.model), Message::ModelSelect).placeholder("Choose a model");
+        let submit=submit_btn("RUN", Message::Submit);
+
+        let column=column![text_insert,slider, pick_list, submit].padding(Padding::from([50,20]))
+        .align_items(Alignment::Center)
+        .spacing(40);
+
+        let input_box=container(column).padding(Padding::from(20)).style(theme::Container::Custom(Box::new(ContainerStyle)));
         //let btn = submit_btn("Toggle Theme", Message::ToggleTheme);
         let wrapper = Column::new()
-        .spacing(50).width(Length::Fill).align_items(Alignment::Start).push(content)
+        .spacing(50).width(Length::Fill).align_items(Alignment::Start).push(input_box)
         .push(page_footer());
 
         container(wrapper)
@@ -265,7 +272,15 @@ fn page_footer() -> Container<'static, Message>{
     container(footer).center_x().center_y()
 }
 
-fn insert_block(fieldstr: &FieldStr, slider_val: u8) -> Container<Message>{
+fn reso_slider(slider_val: u8) -> Column<'static, Message>{
+    let slider=Column::new()
+    .push(text("Averaging down resolition:"))
+    .push(slider(4..=10, slider_val, Message::SliderChange)).width(Length::Fixed(500.0))
+    .push(text(slider_val.to_string()).width(Length::Fill).horizontal_alignment(Horizontal::Center));
+    slider
+}
+
+fn insert_block(fieldstr: &FieldStr) -> Column<Message>{
     let column=Column::new()
     .push(text("Orange Bear"))
     .push(
@@ -288,18 +303,11 @@ fn insert_block(fieldstr: &FieldStr, slider_val: u8) -> Container<Message>{
             //when we call the FileChange func, we need to update position text input field only - therefore others remain unchanged
             Message::FieldStrChange(fieldstr.position.clone(), fieldstr.start_price.clone(), dip)
         })
-    ).push(text("Below slider let you choose the resolution of averaging down, From 4-10"))
-    //.push(text("For instance, resolution of 4 will fill 4 buy orders at the time when hitting the dip price."))
-    .push(slider(4..=10, slider_val, Message::SliderChange)).width(Length::Fixed(500.0))
-    .push(text(slider_val.to_string()).width(Length::Fill).horizontal_alignment(Horizontal::Center))
-    //.push(pick_list(&Model::All[..], Some(self), on_selected))
-    
-    .push(submit_btn("RUN", Message::Submit))
-    .padding(Padding::from([50,20]))
+    ).padding(Padding::from([50,20]))
     .align_items(Alignment::Center)
     .spacing(40);
 
-    container(column).padding(Padding::from(20)).style(theme::Container::Custom(Box::new(ContainerStyle)))
+    column
 }
 
 fn res_block(){
