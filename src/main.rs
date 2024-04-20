@@ -1,5 +1,8 @@
+use std::default;
+
+use iced::window::Mode;
 use iced::{event, Alignment, Background, Border, Element, Length, Padding, Sandbox, Settings, Shadow, Vector};
-use iced::widget::{button, container, text, text_input, Button, Column, Container, Row, Text, TextInput};
+use iced::widget::{button, container, slider, pick_list, text, text_input, Button, Column, Container, Row, Text, TextInput};
 
 use iced::theme::{self, Theme};
 use iced::alignment::{Horizontal , Vertical};
@@ -27,19 +30,40 @@ struct Field{
     position: u8,
     start_price: u8,
     dip_price: u8,
-    model: OrderModel,
+    resolution: u8,
+    model: Option<Model>,
 }
 
-#[derive(Debug, Clone)]
-enum OrderModel{
-    Flat,
-    Pyramid,
-    SteepTemple,
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+enum Model{
+    #[default]
+    FlatHat,
+    Pyramid
 }
+
+impl Model{
+    const ALL: [Model;2]=[
+        Model::FlatHat,
+        Model::Pyramid,
+    ];
+}
+
+impl std::fmt::Display for Model {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                Model::FlatHat => "Flat hat",
+                Model::Pyramid => "Pyramid"})
+            }
+        }
 
 #[derive(Debug, Clone)]
 enum Message {
-    FieldChange(String, String, String), 
+    FieldStrChange(String, String, String), 
+    SliderChange(u8),
+    ModelSelect(Option<Model>),
     Submit, // trigger to calculate bid distribution
     Clear, // reset to default
     ToggleTheme, // change between light/dark
@@ -54,7 +78,8 @@ impl Sandbox for Bear{
                 position: 0,
                 start_price: 0,
                 dip_price: 0,
-                model: OrderModel::Flat,
+                resolution: 4,
+                model: Some(Model::FlatHat),
             },
             fields_str: FieldStr{
                 position: String::new(),
@@ -75,10 +100,16 @@ impl Sandbox for Bear{
 
     fn update(&mut self, message: Message) {
         match message{
-            Message::FieldChange(position,start,dip) => {
+            Message::FieldStrChange(position,start,dip) => {
                 self.fields_str.position=position;
                 self.fields_str.start_price=start;
                 self.fields_str.dip_price=dip;
+            }
+            Message::SliderChange(val) =>{
+                self.fields.resolution=val;
+            }
+            Message::ModelSelect(model) =>{
+                self.fields.model=model;
             }
             Message::Submit => {}
             Message::Clear => {}
@@ -91,10 +122,10 @@ impl Sandbox for Bear{
     }
 
     fn view(&self) -> Element<Message> {
-        let content= insert_block(&self.fields_str);
+        let content= insert_block(&self.fields_str,self.fields.resolution);
         //let btn = submit_btn("Toggle Theme", Message::ToggleTheme);
         let wrapper = Column::new()
-        .spacing(50).width(Length::Fill).align_items(Alignment::Center).push(content)
+        .spacing(50).width(Length::Fill).align_items(Alignment::Start).push(content)
         .push(page_footer());
 
         container(wrapper)
@@ -221,7 +252,7 @@ fn submit_btn(name: &str, event: Message) -> Button<Message>{
         .vertical_alignment(Vertical::Center)
         .size(21)
     ).on_press(event)
-    .width(Length::Fixed(500.0))
+    .width(Length::Fixed(250.0))
     .height(Length::Fixed(45.0))
     .style(iced::theme::Button::Custom(Box::new(ButtonStyle::Standard)))
 }
@@ -234,33 +265,43 @@ fn page_footer() -> Container<'static, Message>{
     container(footer).center_x().center_y()
 }
 
-fn insert_block(field: &FieldStr) -> Container<Message>{
+fn insert_block(fieldstr: &FieldStr, slider_val: u8) -> Container<Message>{
     let column=Column::new()
     .push(text("Orange Bear"))
     .push(
-        input_field("Overall Position", &field.position)
+        input_field("Overall Position", &fieldstr.position)
         .on_input(|position|{
             //when we call the FileChange func, we need to update position text input field only - therefore others remain unchanged
-            Message::FieldChange(position, field.start_price.clone(), field.dip_price.clone())
+            Message::FieldStrChange(position, fieldstr.start_price.clone(), fieldstr.dip_price.clone())
         })
     )
     .push(
-        input_field("Preferred Starting price", &field.start_price)
+        input_field("Preferred Starting price", &fieldstr.start_price)
         .on_input(|start|{
             //when we call the FileChange func, we need to update position text input field only - therefore others remain unchanged
-            Message::FieldChange(field.position.clone(), start, field.dip_price.clone())
+            Message::FieldStrChange(fieldstr.position.clone(), start, fieldstr.dip_price.clone())
         })
     )
     .push(
-        input_field("Estimated Dip Price", &field.dip_price)
+        input_field("Estimated Dip Price", &fieldstr.dip_price)
         .on_input(|dip|{
             //when we call the FileChange func, we need to update position text input field only - therefore others remain unchanged
-            Message::FieldChange(field.position.clone(), field.start_price.clone(), dip)
+            Message::FieldStrChange(fieldstr.position.clone(), fieldstr.start_price.clone(), dip)
         })
-    ).push(submit_btn("RUN", Message::Submit))
+    ).push(text("Below slider let you choose the resolution of averaging down, From 4-10"))
+    //.push(text("For instance, resolution of 4 will fill 4 buy orders at the time when hitting the dip price."))
+    .push(slider(4..=10, slider_val, Message::SliderChange)).width(Length::Fixed(500.0))
+    .push(text(slider_val.to_string()).width(Length::Fill).horizontal_alignment(Horizontal::Center))
+    //.push(pick_list(&Model::All[..], Some(self), on_selected))
+    
+    .push(submit_btn("RUN", Message::Submit))
     .padding(Padding::from([50,20]))
     .align_items(Alignment::Center)
     .spacing(40);
 
     container(column).padding(Padding::from(20)).style(theme::Container::Custom(Box::new(ContainerStyle)))
+}
+
+fn res_block(){
+
 }
