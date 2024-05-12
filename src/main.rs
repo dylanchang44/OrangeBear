@@ -1,4 +1,4 @@
-use iced::{event, Alignment, Element, Length, Padding, Renderer, Sandbox, Settings};
+use iced::{Alignment, Element, Length, Padding, Renderer, Sandbox, Settings};
 use iced::widget::{column, container, pick_list, Column, PickList, Row};
 use iced::theme::{self, Theme};
 
@@ -43,7 +43,7 @@ enum Message {
     FieldStrChange(String, String, String), 
     SliderChange(u32),
     ModelSelect(Model),
-    Submit(), // trigger to calculate bid distribution
+    Submit, // trigger to calculate bid distribution
     ToggleTheme, // change between light/dark
 }
 
@@ -96,10 +96,8 @@ impl Sandbox for Bear{
             Message::ModelSelect(model) =>{
                 self.fields.model=model;
             }
-            Message::Submit() => {
+            Message::Submit => {
                 self.loading_inputstr().unwrap();
-                //create string for output box
-
             }
             Message::ToggleTheme => {
                 self.theme= if self.theme == Theme::Light {Theme::Dark}
@@ -113,16 +111,15 @@ impl Sandbox for Bear{
         let text_insert= insert_block(&self.fields_str);
         let slider=reso_slider(self.fields.resolution);
         let pick_list:PickList<'static, Model, [Model; 2], Model, Message, Theme, Renderer>=pick_list(Model::ALL, Some(self.fields.model), Message::ModelSelect).placeholder("Choose a model");
-        let submit=submit_btn("RUN", Message::Submit());
+        let submit=submit_btn("RUN", Message::Submit);
         let input_column=column![text_insert, slider, pick_list, submit].padding(Padding::from([50,20]))
         .align_items(Alignment::Center)
-        .spacing(40);
+        .spacing(25);
 
-        let output=res_block(&self.fields);
+        let output=res_block(&self.fields).padding(Padding::from([50,20]));
+        //max width 500
         let input_box=container(input_column).padding(Padding::from(20)).style(theme::Container::Custom(Box::new(ContainerStyle)));
-        //let btn = submit_btn("Toggle Theme", Message::ToggleTheme);
         let output_box=container(output).padding(Padding::from(20)).style(theme::Container::Custom(Box::new(ContainerStyle)));
-        
         let box_row=Row::new().spacing(20).push(input_box).push(output_box);
         
         //row![input_box, output_box];

@@ -1,10 +1,8 @@
-use iced::{event, Alignment, Length, Padding};
-use iced::widget::{button, container, slider, text, Button, Column, Container, Row, TextInput};
-use iced::theme;
-use iced::alignment::{Horizontal , Vertical};
+use iced::{alignment::{Horizontal , Vertical}, theme, Alignment, Length, Padding};
+use iced::widget::{button, container, slider, text, Text, Button, Column, Container, Row, TextInput};
 
-use crate::view::style::ButtonStyle;
-use crate::{output_text, Field, FieldStr, Message};
+use crate::{output_visual, view::style::{ButtonStyle, ColorRgb}};
+use crate::{Field, FieldStr, Message};
 
 // input field
 pub fn input_field(_placeholder: &str, _vale: &str) -> TextInput<'static, Message>{
@@ -75,12 +73,55 @@ pub fn insert_block(fieldstr: &FieldStr) -> Column<Message>{
 pub fn res_block(input: &Field) -> Column<Message>{
     //check integrity to decide whether output text
     let output=match input.integrity{
-        true=> output_text(input),
-        false=> "Waiting for submission".to_string()
+        true=> output_visual(input),
+        false=> Column::new().push(text("Waiting for submission\n"))
     };
     let column=Column::new()
-    .push(text("Averaging Down\n"))
-    .push(text(output));
+    .push(text("Averaging Down\n")).align_items(Alignment::Center)
+    .push(output).spacing(50);
 
     column
+}
+
+pub fn order_visual(order_vec: Vec<(u32,u32)>) -> Column<'static, Message> {
+    let mut visual_col = Column::new();
+    let orange_rgb: Vec<ColorRgb>=vec![
+        (255.0, 175.0, 75.0),
+        (255.0, 162.0, 60.0),
+        (255.0, 149.0, 45.0),
+        (255.0, 136.0, 30.0),
+        (255.0, 123.0, 15.0),
+        (237.0, 111.0, 0.0),
+        (219.0, 102.0, 0.0),
+        (200.0, 90.0, 0.0),
+        (147.0, 78.0, 0.0),
+        (99.0, 58.0, 0.0),
+    ];
+    let color_vec=match order_vec.len(){
+        1..=8 => {orange_rgb[2..(order_vec.len()+2)].to_vec()},
+        _ => orange_rgb[..order_vec.len()].to_vec()};
+    let mut price_button_text:String;
+    for (idx, order) in order_vec.iter().enumerate() {
+        price_button_text=format!("Order {} shares", order.1);
+        let rgb_covert=(color_vec[idx].0/255.0, color_vec[idx].1/255.0, color_vec[idx].2/255.0);
+        let price_button=Button::new(
+            text(price_button_text)
+            .horizontal_alignment(Horizontal::Center)
+            .vertical_alignment(Vertical::Center)
+            .size(16)
+        )
+        .width(Length::Fixed(500.0 - (9.0 - (idx as f32)) * 35.0))
+        .height(Length::Fixed(35.0))
+        .style(iced::theme::Button::Custom(Box::new(ButtonStyle::PriceButton(rgb_covert))));
+
+        let order_bar = Row::new()
+            .push(Text::new(order.0.to_string()))
+            .push(price_button).spacing(10).align_items(Alignment::Center);
+
+            visual_col = visual_col.push(order_bar);
+    }
+
+    visual_col
+    .align_items(Alignment::Start)
+    .spacing(30)
 }

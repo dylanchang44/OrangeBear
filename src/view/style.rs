@@ -2,36 +2,42 @@ use iced::{Background, Shadow, Border, Vector};
 use iced::widget::{button, container};
 use iced::theme::Theme;
 
+pub type ColorRgb=(f32,f32,f32);
 //define button styling
 pub enum ButtonStyle{
     Standard,
+    PriceButton(ColorRgb),
     ThemeButton,
 }
 
 impl button::StyleSheet for ButtonStyle{
     type Style= Theme;
-
+    
     fn active(&self, theme: &Self::Style) -> button::Appearance {
         button::Appearance {
         background: Some(Background::Color(match self {
             Self::Standard=> iced::Color::from_rgb(0.059, 0.463, 0.702),
+            Self::PriceButton(rgb) => iced::Color::from_rgb(rgb.0, rgb.1, rgb.2),
             Self::ThemeButton=> iced::Color::default()
         })), 
         text_color: {
             if theme == &Theme::Light {
                 match self {
                     Self::Standard => iced::Color::WHITE,
+                    Self::PriceButton(_rgb) => iced::Color::BLACK,
                     Self::ThemeButton => iced::Color::BLACK,
                 }
             } else {
                 match self {
                     Self::Standard => iced::Color::WHITE,
+                    Self::PriceButton(_rgb) => iced::Color::WHITE,
                     Self::ThemeButton => iced::Color::WHITE,
                 }
             }
         }, 
         border: match self {
-            Self::Standard => Border::with_radius(5),
+            Self::Standard => Border::with_radius(12),
+            Self::PriceButton(_rgb) => Border::with_radius(5),
             Self::ThemeButton => Border::default(),
         }, 
         shadow: match self{
@@ -40,6 +46,7 @@ impl button::StyleSheet for ButtonStyle{
                 offset: Vector::new(0.0, 0.4),
                 blur_radius: 20.0,
             },
+            Self::PriceButton(_rgb) => Shadow::default(),
             Self::ThemeButton => Shadow::default(),
         },
         ..Default::default()
