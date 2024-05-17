@@ -1,8 +1,6 @@
-use iced::widget::Column;
-use crate::{model::model::Model, order_visual, Field, Message};
 
 //return vector of pair (price,share)
-fn flathat_calc(position: u32, start: u32, dip: u32, res:u32) -> Vec<(u32,u32)>{
+pub fn flathat_calc(position: u32, start: u32, dip: u32, res:u32) -> Vec<(u32,u32)>{
     let mut distrib_vec: Vec<(u32,u32)>=vec![];
     let price_per_share=(start+dip)/2;
     let total_share=position/price_per_share;
@@ -14,7 +12,7 @@ fn flathat_calc(position: u32, start: u32, dip: u32, res:u32) -> Vec<(u32,u32)>{
     distrib_vec
 }
 
-fn pyramid_calc(position: u32, start: u32, dip: u32, res:u32) -> Vec<(u32,u32)>{
+pub fn pyramid_calc(position: u32, start: u32, dip: u32, res:u32) -> Vec<(u32,u32)>{
     let mut distrib_vec: Vec<(u32,u32)>=vec![];
     let position_per_step=position/res;
     let mut position_left=position;
@@ -37,35 +35,4 @@ fn pyramid_calc(position: u32, start: u32, dip: u32, res:u32) -> Vec<(u32,u32)>{
         else {tail-=1;}
     }
     distrib_vec
-}
-
-// pub fn output_text(input: &Field) -> String{
-//     let mut text=String::new();
-//     let position=input.position;
-//     let start=input.start_price;
-//     let dip=input.dip_price;
-//     let res=input.resolution;
-
-//     let order_vec= match input.model{
-//         Model::FlatHat => flathat_calc(position, start, dip, res),
-//         Model::Pyramid => pyramid_calc(position, start, dip, res),
-//     };
-//     for (price, share) in order_vec{
-//         text.push_str(&format!("price : {}, share: {}.\n", price, share));
-//     }
-//     text
-// }
-
-pub fn output_visual(input: &Field) -> Column<Message>{
-    let position=input.position;
-    let start=input.start_price;
-    let dip=input.dip_price;
-    let res=input.resolution;
-
-    let order_vec= match input.model{
-        Model::FlatHat => flathat_calc(position, start, dip, res),
-        Model::Pyramid => pyramid_calc(position, start, dip, res),
-    };
-
-    order_visual(order_vec)
 }

@@ -1,7 +1,7 @@
 use iced::{alignment::{Horizontal , Vertical}, theme, Alignment, Length, Padding};
 use iced::widget::{button, container, slider, text, Text, Button, Column, Container, Row, TextInput};
 
-use crate::{output_visual, view::style::{ButtonStyle, ColorRgb}};
+use crate::{view::style::{ButtonStyle, ColorRgb}, model::model::Model, util::util::*};
 use crate::{Field, FieldStr, Message};
 
 const INPUT_WIDTH:f32=350.0;
@@ -65,7 +65,7 @@ pub fn insert_block(fieldstr: &FieldStr) -> Column<Message>{
             //when we call the FileChange func, we need to update position text input field only - therefore others remain unchanged
             Message::FieldStrChange(fieldstr.position.clone(), fieldstr.start_price.clone(), dip)
         })
-    ).padding(Padding::from([30,20]))
+    ).padding(Padding::from([20,20]))
     .align_items(Alignment::Center)
     .spacing(28);
 
@@ -76,17 +76,32 @@ pub fn res_block(input: &Field) -> Column<Message>{
     //check integrity to decide whether output text
     let output=match input.integrity{
         true=> output_visual(input),
-        false=> Column::new().push(text("Waiting for submission\n"))
+        false=> Row::new().push(text("Waiting for submission\n"))
     };
     let column=Column::new()
     .push(text("Averaging Down\n")).align_items(Alignment::Center)
-    .push(output).spacing(20);
+    .push(output).spacing(40);
 
     column
 }
 
-pub fn order_visual(order_vec: Vec<(u32,u32)>) -> Column<'static, Message> {
-    let mut visual_col = Column::new();
+pub fn output_visual(input: &Field) -> Row<Message>{
+    let position=input.position;
+    let start=input.start_price;
+    let dip=input.dip_price;
+    let res=input.resolution;
+
+    let order_vec= match input.model{
+        Model::FlatHat => flathat_calc(position, start, dip, res),
+        Model::Pyramid => pyramid_calc(position, start, dip, res),
+    };
+    order_visual(order_vec)
+}
+
+pub fn order_visual(order_vec: Vec<(u32,u32)>) -> Row<'static, Message> {
+    let visual_row = Row::new();
+    let mut price_col = Column::new();
+    let mut brick_col = Column::new();
     let orange_rgb: Vec<ColorRgb>=vec![
         (255.0, 175.0, 75.0),
         (255.0, 162.0, 60.0),
@@ -103,6 +118,7 @@ pub fn order_visual(order_vec: Vec<(u32,u32)>) -> Column<'static, Message> {
         1..=8 => {orange_rgb[2..(order_vec.len()+2)].to_vec()},
         _ => orange_rgb[..order_vec.len()].to_vec()};
     let mut price_button_text:String;
+
     for (idx, order) in order_vec.iter().enumerate() {
         price_button_text=format!("Order {} shares", order.1);
         let rgb_covert=(color_vec[idx].0/255.0, color_vec[idx].1/255.0, color_vec[idx].2/255.0);
@@ -113,17 +129,18 @@ pub fn order_visual(order_vec: Vec<(u32,u32)>) -> Column<'static, Message> {
             .size(15)
         )
         .width(Length::Fixed(500.0 - (9.0 - (idx as f32)) * 35.0))
-        .height(Length::Fixed(30.0))
+        .height(Length::Fixed(35.0))
         .style(iced::theme::Button::Custom(Box::new(ButtonStyle::PriceButton(rgb_covert))));
 
-        let order_bar = Row::new()
-            .push(Text::new(order.0.to_string()))
-            .push(price_button).spacing(10).align_items(Alignment::Center);
+        // let order_bar = Row::new()
+        //     .push(Text::new(order.0.to_string()))
+        //     .push(price_button).spacing(10).align_items(Alignment::Center);
 
-            visual_col = visual_col.push(order_bar);
+            price_col = price_col.push(Text::new(order.0.to_string()).size(18)).align_items(Alignment::Center).spacing(26).padding(Padding::from([5,2]));
+            brick_col = brick_col.push(price_button).align_items(Alignment::Center).spacing(15);
     }
 
-    visual_col
+    visual_row.push(price_col).push(brick_col)
     .align_items(Alignment::Start)
-    .spacing(15)
+    .spacing(30)
 }
