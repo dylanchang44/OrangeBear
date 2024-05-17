@@ -112,15 +112,15 @@ impl Sandbox for Bear{
         let slider=reso_slider(self.fields.resolution);
         let pick_list:PickList<'static, Model, [Model; 2], Model, Message, Theme, Renderer>=pick_list(Model::ALL, Some(self.fields.model), Message::ModelSelect).placeholder("Choose a model");
         let submit=submit_btn("RUN", Message::Submit);
-        let input_column=column![text_insert, slider, pick_list, submit].padding(Padding::from([50,20]))
+        let input_column=column![text_insert, slider, pick_list, submit].padding(Padding::from([30,20]))
         .align_items(Alignment::Center)
-        .spacing(25);
+        .spacing(20);
 
-        let output=res_block(&self.fields).padding(Padding::from([50,20]));
+        let output=res_block(&self.fields).padding(Padding::from([20,15]));
         //max width 500
         let input_box=container(input_column).padding(Padding::from(20)).style(theme::Container::Custom(Box::new(ContainerStyle)));
         let output_box=container(output).padding(Padding::from(20)).style(theme::Container::Custom(Box::new(ContainerStyle)));
-        let box_row=Row::new().spacing(20).push(input_box).push(output_box);
+        let box_row=Row::new().push(input_box).push(output_box).spacing(50);
         
         //row![input_box, output_box];
         let wrapper = Column::new()
