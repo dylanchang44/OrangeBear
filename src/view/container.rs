@@ -2,7 +2,7 @@ use iced::{alignment::{Horizontal , Vertical}, theme, Alignment, Length, Padding
 use iced::widget::{button, container, slider, text, Text, Button, Column, Container, Row, TextInput};
 
 use crate::{view::style::{ButtonStyle, ColorRgb}, model::model::Model, util::util::*};
-use crate::{Field, FieldStr, Message};
+use crate::{Field, PreField, Message};
 
 const INPUT_WIDTH:f32=350.0;
 
@@ -42,28 +42,28 @@ pub fn reso_slider(slider_val: u32) -> Column<'static, Message>{
     slider
 }
 
-pub fn insert_block(fieldstr: &FieldStr) -> Column<Message>{
+pub fn insert_block(field_str: &PreField) -> Column<Message>{
     let column=Column::new()
     .push(text("Orange Bear"))
     .push(
-        input_field("Overall Position", &fieldstr.position)
+        input_field("Overall Position", &field_str.position)
         .on_input(|position|{
             //when we call the FileChange func, we need to update position text input field only - therefore others remain unchanged
-            Message::FieldStrChange(position, fieldstr.start_price.clone(), fieldstr.dip_price.clone())
+            Message::FieldStrChange(position, field_str.start_price.clone(), field_str.dip_price.clone())
         })
     )
     .push(
-        input_field("Preferred Starting price", &fieldstr.start_price)
+        input_field("Preferred Starting price", &field_str.start_price)
         .on_input(|start|{
             //when we call the FileChange func, we need to update position text input field only - therefore others remain unchanged
-            Message::FieldStrChange(fieldstr.position.clone(), start, fieldstr.dip_price.clone())
+            Message::FieldStrChange(field_str.position.clone(), start, field_str.dip_price.clone())
         })
     )
     .push(
-        input_field("Estimated Dip Price", &fieldstr.dip_price)
+        input_field("Estimated Dip Price", &field_str.dip_price)
         .on_input(|dip|{
             //when we call the FileChange func, we need to update position text input field only - therefore others remain unchanged
-            Message::FieldStrChange(fieldstr.position.clone(), fieldstr.start_price.clone(), dip)
+            Message::FieldStrChange(field_str.position.clone(), field_str.start_price.clone(), dip)
         })
     ).padding(Padding::from([20,20]))
     .align_items(Alignment::Center)

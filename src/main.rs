@@ -5,7 +5,6 @@ use iced::theme::{self, Theme};
 use view::container::*;
 use view::style::*;
 use model::model::*;
-use util::util::*;
 
 mod view;
 mod model;
@@ -16,16 +15,18 @@ fn main() -> iced::Result{
 
 //first off, create a struct for app state
 struct Bear{
-    fields_str: FieldStr,
+    pre_fields: PreField,
     fields: Field,
     theme: Theme,
 }
 
 #[derive(Debug, Clone)]
-struct FieldStr{
+struct PreField{
     position: String,
     start_price: String,
     dip_price: String,
+    resolution: u32,
+    model:Model,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -66,10 +67,12 @@ impl Sandbox for Bear{
                 model: Model::FlatHat,
                 integrity: false,
             },
-            fields_str: FieldStr{
+            pre_fields: PreField{
                 position: String::new(),
                 start_price: String::new(),
                 dip_price: String::new(),
+                resolution: 4,
+                model: Model::FlatHat,
             },
             theme: Theme::Light,
         }
@@ -86,18 +89,18 @@ impl Sandbox for Bear{
     fn update(&mut self, message: Message) {
         match message{
             Message::FieldStrChange(position,start,dip) => {
-                self.fields_str.position=position;
-                self.fields_str.start_price=start;
-                self.fields_str.dip_price=dip;
+                self.pre_fields.position=position;
+                self.pre_fields.start_price=start;
+                self.pre_fields.dip_price=dip;
             }
             Message::SliderChange(val) =>{
-                self.fields.resolution=val;
+                self.pre_fields.resolution=val;
             }
             Message::ModelSelect(model) =>{
-                self.fields.model=model;
+                self.pre_fields.model=model;
             }
             Message::Submit => {
-                self.loading_inputstr().unwrap();
+                self.loading_input().unwrap();
             }
             Message::ToggleTheme => {
                 self.theme= if self.theme == Theme::Light {Theme::Dark}
@@ -108,9 +111,9 @@ impl Sandbox for Bear{
     }
 
     fn view(&self) -> Element<Message> {
-        let text_insert= insert_block(&self.fields_str);
-        let slider=reso_slider(self.fields.resolution);
-        let pick_list:PickList<'static, Model, [Model; 2], Model, Message, Theme, Renderer>=pick_list(Model::ALL, Some(self.fields.model), Message::ModelSelect).placeholder("Choose a model");
+        let text_insert= insert_block(&self.pre_fields);
+        let slider=reso_slider(self.pre_fields.resolution);
+        let pick_list:PickList<'static, Model, [Model; 2], Model, Message, Theme, Renderer>=pick_list(Model::ALL, Some(self.pre_fields.model), Message::ModelSelect).placeholder("Choose a model");
         let submit=submit_btn("RUN", Message::Submit);
         let input_column=column![text_insert, slider, pick_list, submit].padding(Padding::from([30,20]))
         .align_items(Alignment::Center)
@@ -139,12 +142,12 @@ impl Sandbox for Bear{
 }
 
 impl Bear{
-    fn loading_inputstr(&mut self) -> Result<(), Error>{
-        let input_str=self.fields_str.clone();
+    fn loading_input(&mut self) -> Result<(), Error>{
+        let inputs=self.pre_fields.clone();
         //turn str into u32
-        let position: u32 = input_str.position.parse().map_err(|_| Error::NotIntegerError)?;
-        let start: u32 = input_str.start_price.parse().map_err(|_| Error::NotIntegerError)?;
-        let dip: u32 = input_str.dip_price.parse().map_err(|_| Error::NotIntegerError)?;
+        let position: u32 = inputs.position.parse().map_err(|_| Error::NotIntegerError)?;
+        let start: u32 = inputs.start_price.parse().map_err(|_| Error::NotIntegerError)?;
+        let dip: u32 = inputs.dip_price.parse().map_err(|_| Error::NotIntegerError)?;
 
         if position <= 0 && start<=dip {
             return Err(Error::ValueError);
@@ -154,6 +157,8 @@ impl Bear{
         self.fields.position = position;
         self.fields.start_price = start;
         self.fields.dip_price = dip;
+        self.fields.resolution = inputs.resolution;
+        self.fields.model = inputs.model;
         self.fields.integrity = true;
         Ok(())
     }
